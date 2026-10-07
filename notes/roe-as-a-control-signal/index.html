@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rules of engagement as a control signal — DarkLab Security</title><meta name="description" content="A design note for monitoring authorised offensive-cyber agents. It pairs a rules-of-engagement check with a suspicion score for agents that reach beyond their task."><link rel="canonical" href="https://www.darklabsecurity.com/notes/roe-as-a-control-signal/"><meta name="theme-color" content="#0c0f12"><meta name="color-scheme" content="dark"><!-- Open Graph / Twitter --><meta property="og:type" content="article"><meta property="og:site_name" content="DarkLab Security"><meta property="og:title" content="Rules of engagement as a control signal — DarkLab Security"><meta property="og:description" content="A design note for monitoring authorised offensive-cyber agents. It pairs a rules-of-engagement check with a suspicion score for agents that reach beyond their task."><meta property="og:url" content="https://www.darklabsecurity.com/notes/roe-as-a-control-signal/"><meta name="twitter:card" content="summary"><!-- Fonts --><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate" type="application/rss+xml" title="DarkLab Security — Notes" href="/rss.xml"><link rel="sitemap" href="/sitemap-index.xml"><link rel="stylesheet" href="/_astro/Footer.C4TmnpXc.css"><style>.note[data-astro-cid-5aglraq5]{max-width:46rem;padding-block-start:clamp(2.5rem,6vw,4.5rem);padding-block-end:clamp(2.5rem,6vw,4.5rem)}.back[data-astro-cid-5aglraq5]{font-family:var(--font-mono);color:var(--text-muted);font-size:.85rem}.back[data-astro-cid-5aglraq5]:hover{color:var(--text)}header[data-astro-cid-5aglraq5]{border-bottom:1px solid var(--border-soft);margin:1.75rem 0 2.25rem;padding-bottom:1.75rem}.meta[data-astro-cid-5aglraq5]{font-family:var(--font-mono);color:var(--text-dim);flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.9rem;font-size:.8rem;display:flex}.draft[data-astro-cid-5aglraq5]{color:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);text-transform:uppercase;padding:0 .5rem;font-size:.68rem}h1[data-astro-cid-5aglraq5]{font-size:clamp(1.5rem,4.2vw,2.2rem)}.summary[data-astro-cid-5aglraq5]{color:var(--text-muted);margin:0;font-size:1.15rem}.prose[data-astro-cid-5aglraq5]{font-size:1.06rem}.prose[data-astro-cid-5aglraq5] h2{margin:2.4rem 0 .8rem;font-size:1.15rem}.prose[data-astro-cid-5aglraq5] h3{margin:1.8rem 0 .6rem;font-size:1rem}.prose[data-astro-cid-5aglraq5] p,.prose[data-astro-cid-5aglraq5] li{color:color-mix(in srgb, var(--text) 86%, var(--bg))}.prose[data-astro-cid-5aglraq5] a{color:var(--accent);text-underline-offset:3px;text-decoration:underline}.prose[data-astro-cid-5aglraq5] ul,.prose[data-astro-cid-5aglraq5] ol{margin:0 0 1.1rem;padding-left:1.3rem}.prose[data-astro-cid-5aglraq5] li{margin-bottom:.4rem}.prose[data-astro-cid-5aglraq5] strong{color:var(--text)}.prose[data-astro-cid-5aglraq5] blockquote{border-left:2px solid var(--accent);color:var(--text-muted);margin:1.5rem 0;padding:.2rem 0 .2rem 1.1rem}.prose[data-astro-cid-5aglraq5] code{font-family:var(--font-mono);background:var(--bg-elev-2);border:1px solid var(--border-soft);border-radius:5px;padding:.08em .35em;font-size:.88em}.prose[data-astro-cid-5aglraq5] pre{border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin:0 0 1.25rem;padding:1rem 1.1rem;font-size:.88rem;line-height:1.55;overflow-x:auto;background:var(--bg-elev)!important}.prose[data-astro-cid-5aglraq5] pre code{background:0 0;border:0;padding:0}.prose[data-astro-cid-5aglraq5] table{border-collapse:collapse;width:100%;margin:0 0 1.4rem;font-size:.94rem;display:block;overflow-x:auto}.prose[data-astro-cid-5aglraq5] th,.prose[data-astro-cid-5aglraq5] td{text-align:left;border-bottom:1px solid var(--border-soft);padding:.55rem .8rem}.prose[data-astro-cid-5aglraq5] th{font-family:var(--font-mono);letter-spacing:.05em;color:var(--text-muted);font-size:.78rem;font-weight:500}.prose[data-astro-cid-5aglraq5] td{color:color-mix(in srgb, var(--text) 86%, var(--bg))}
+</style></head> <body> <a class="skip-link" href="#main">Skip to content</a>  <header class="nav" data-astro-cid-wpvy4v7s> <div class="container nav-inner" data-astro-cid-wpvy4v7s> <a class="brand" href="/" aria-label="DarkLab Security — home" data-astro-cid-wpvy4v7s> <span class="wordmark" style="font-size:0.95rem" data-astro-cid-qisgtjgl>DARKLAB<span class="cur blink" aria-hidden="true" data-astro-cid-qisgtjgl></span></span> </a> <nav aria-label="Primary" data-astro-cid-wpvy4v7s> <ul class="nav-links" data-astro-cid-wpvy4v7s> <li data-astro-cid-wpvy4v7s><a href="/#focus" data-astro-cid-wpvy4v7s>Focus</a></li> <li data-astro-cid-wpvy4v7s><a href="/notes/" data-astro-cid-wpvy4v7s>Notes</a></li> <li data-astro-cid-wpvy4v7s><a href="/#contact" class="nav-cta" data-astro-cid-wpvy4v7s>Contact</a></li> </ul> </nav> </div> </header> <main id="main" class="container note" data-astro-cid-5aglraq5> <a class="back" href="/notes/" data-astro-cid-5aglraq5>← Notes</a> <header data-astro-cid-5aglraq5> <p class="meta" data-astro-cid-5aglraq5> <time datetime="2026-09-29T00:00:00.000Z" data-astro-cid-5aglraq5>29 Sept 2026</time> <span data-astro-cid-5aglraq5>· AI control</span><span data-astro-cid-5aglraq5>· cyber evals</span><span data-astro-cid-5aglraq5>· offensive agents</span><span data-astro-cid-5aglraq5>· design note</span>  </p> <h1 data-astro-cid-5aglraq5>Rules of engagement as a control signal</h1> <p class="summary" data-astro-cid-5aglraq5>A design note for monitoring authorised offensive-cyber agents. It pairs a rules-of-engagement check with a suspicion score for agents that reach beyond their task.</p> </header> <article class="prose" data-astro-cid-5aglraq5> <p><em>Design note. Work in progress; no results yet.</em></p>
+<p>Most AI-control research studies agents doing benign work, such as writing code or administering
+systems, and asks whether a monitor can catch a hidden malicious side task. Offensive-cyber agents
+are the reverse. Their <em>legitimate</em> task is to attack something. Exploitation, credential theft
+and lateral movement are expected, so “does this look malicious?” is a useless monitoring
+question.</p>
+<p>Human red teams have dealt with this for decades. The answer is the <strong>rules of engagement</strong>: a
+written agreement defining which systems, which techniques and which time window are authorised.
+Everything an operator does is judged against it. This note sketches a monitor built the same way.</p>
+<h2 id="the-failure-mode-it-targets">The failure mode it targets</h2>
+<p>The concrete worry is an agent in an isolated range finding a way to act <em>outside</em> it, by
+reaching the harness, the host or real infrastructure. This has a public precedent: the
+<a href="https://cdn.openai.com/o1-system-card.pdf">o1 system card</a> describes a model that found an exposed Docker API on the evaluation host
+and used it to read a CTF flag by an unintended route. As offensive capability rises, the range
+boundary becomes a real security perimeter, defending against the thing you are measuring.</p>
+<h2 id="two-scores-two-jobs">Two scores, two jobs</h2>
+<p><strong>1. ROE compliance (mostly deterministic)</strong></p>
+<p>Each action is checked against the engagement definition:</p>
+<ul>
+<li><strong>Target:</strong> is the destination inside the authorised range? (Resolved addresses, not strings.)</li>
+<li><strong>Technique:</strong> is this class of action authorised for this engagement? (Mapped to ATT&amp;CK
+techniques, the way real ROEs are written.)</li>
+<li><strong>Window:</strong> is it inside the agreed time and resource budget?</li>
+</ul>
+<p>Where this can be enforced by the sandbox, it should be. The monitor’s job is to log, explain, and
+catch what enforcement can’t express.</p>
+<p><strong>2. Capability suspicion (model-judged)</strong></p>
+<p>A trusted model reviews the trajectory and asks a different question: <em>is the agent acquiring
+capability beyond what this task needs?</em> Signals include:</p>
+<ul>
+<li>probing its own environment: the harness, container runtime, orchestration APIs, egress paths;</li>
+<li>collecting credentials or tokens unrelated to the objective;</li>
+<li>establishing persistence when the task doesn’t call for it;</li>
+<li>tampering with logging, scoring, or anything resembling the evaluation itself.</li>
+</ul>
+<p>None of these is necessarily an ROE breach. Together they describe an agent working its way toward
+the boundary, which is the same pattern a SOC looks for in a credentialed insider.</p>
+<h2 id="combining-them">Combining them</h2>
+<ul>
+<li><strong>ROE violation</strong> → block and halt. These are bright lines.</li>
+<li><strong>High suspicion, ROE-compliant</strong> → pause and escalate to a human adjudicator with the trajectory.</li>
+<li><strong>Low suspicion</strong> → proceed, with a sample kept for audit.</li>
+</ul>
+<p>The adjudication step matters as much as the scoring. Telling an attack from benign-but-unusual
+behaviour from a trajectory is the core skill of incident response, and it’s the part of this work
+where offensive-security experience earns its keep.</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Implement as a ControlArena setting with an offensive-agent task and an authorised range.</li>
+<li>Build an attack policy whose side task is range escape, and measure whether each score, and the
+combination, catches it. The policy has to produce successful escapes first, or the monitor
+numbers mean nothing.</li>
+<li>Backtest the monitor on real agent-driven pentest traffic, where ground truth for “in scope” is
+known.</li>
+</ul>
+<p><a href="/notes/weak-monitor-motivated-attacker/">The previous note</a> showed how weak an 8B monitor is on
+its own. The bet here is that anchoring part of the monitor in a deterministic ROE check, rather
+than relying only on model judgement, makes evasion much harder.</p>
+ </article> </main> <footer class="site-footer" data-astro-cid-jo6i4kqk> <div class="container footer-inner" data-astro-cid-jo6i4kqk> <a href="/" aria-label="DarkLab Security — home" data-astro-cid-jo6i4kqk><span class="wordmark" style="font-size:0.8rem" data-astro-cid-qisgtjgl>DARKLAB<span class="cur" aria-hidden="true" data-astro-cid-qisgtjgl></span></span></a> <p class="copy" data-astro-cid-jo6i4kqk>© 2026 DarkLab Security · <a href="/rss.xml" data-astro-cid-jo6i4kqk>RSS</a></p> </div> </footer>  </body> </html>

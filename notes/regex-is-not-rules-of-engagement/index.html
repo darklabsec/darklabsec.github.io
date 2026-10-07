@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>A regex is not a rules of engagement — DarkLab Security</title><meta name="description" content="Lessons from putting guardrails on an autonomous pentest agent, and why a pattern-matching classifier is the wrong kind of control for a tool-using model."><link rel="canonical" href="https://www.darklabsecurity.com/notes/regex-is-not-rules-of-engagement/"><meta name="theme-color" content="#0c0f12"><meta name="color-scheme" content="dark"><!-- Open Graph / Twitter --><meta property="og:type" content="article"><meta property="og:site_name" content="DarkLab Security"><meta property="og:title" content="A regex is not a rules of engagement — DarkLab Security"><meta property="og:description" content="Lessons from putting guardrails on an autonomous pentest agent, and why a pattern-matching classifier is the wrong kind of control for a tool-using model."><meta property="og:url" content="https://www.darklabsecurity.com/notes/regex-is-not-rules-of-engagement/"><meta name="twitter:card" content="summary"><!-- Fonts --><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate" type="application/rss+xml" title="DarkLab Security — Notes" href="/rss.xml"><link rel="sitemap" href="/sitemap-index.xml"><link rel="stylesheet" href="/_astro/Footer.C4TmnpXc.css"><style>.note[data-astro-cid-5aglraq5]{max-width:46rem;padding-block-start:clamp(2.5rem,6vw,4.5rem);padding-block-end:clamp(2.5rem,6vw,4.5rem)}.back[data-astro-cid-5aglraq5]{font-family:var(--font-mono);color:var(--text-muted);font-size:.85rem}.back[data-astro-cid-5aglraq5]:hover{color:var(--text)}header[data-astro-cid-5aglraq5]{border-bottom:1px solid var(--border-soft);margin:1.75rem 0 2.25rem;padding-bottom:1.75rem}.meta[data-astro-cid-5aglraq5]{font-family:var(--font-mono);color:var(--text-dim);flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.9rem;font-size:.8rem;display:flex}.draft[data-astro-cid-5aglraq5]{color:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);text-transform:uppercase;padding:0 .5rem;font-size:.68rem}h1[data-astro-cid-5aglraq5]{font-size:clamp(1.5rem,4.2vw,2.2rem)}.summary[data-astro-cid-5aglraq5]{color:var(--text-muted);margin:0;font-size:1.15rem}.prose[data-astro-cid-5aglraq5]{font-size:1.06rem}.prose[data-astro-cid-5aglraq5] h2{margin:2.4rem 0 .8rem;font-size:1.15rem}.prose[data-astro-cid-5aglraq5] h3{margin:1.8rem 0 .6rem;font-size:1rem}.prose[data-astro-cid-5aglraq5] p,.prose[data-astro-cid-5aglraq5] li{color:color-mix(in srgb, var(--text) 86%, var(--bg))}.prose[data-astro-cid-5aglraq5] a{color:var(--accent);text-underline-offset:3px;text-decoration:underline}.prose[data-astro-cid-5aglraq5] ul,.prose[data-astro-cid-5aglraq5] ol{margin:0 0 1.1rem;padding-left:1.3rem}.prose[data-astro-cid-5aglraq5] li{margin-bottom:.4rem}.prose[data-astro-cid-5aglraq5] strong{color:var(--text)}.prose[data-astro-cid-5aglraq5] blockquote{border-left:2px solid var(--accent);color:var(--text-muted);margin:1.5rem 0;padding:.2rem 0 .2rem 1.1rem}.prose[data-astro-cid-5aglraq5] code{font-family:var(--font-mono);background:var(--bg-elev-2);border:1px solid var(--border-soft);border-radius:5px;padding:.08em .35em;font-size:.88em}.prose[data-astro-cid-5aglraq5] pre{border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin:0 0 1.25rem;padding:1rem 1.1rem;font-size:.88rem;line-height:1.55;overflow-x:auto;background:var(--bg-elev)!important}.prose[data-astro-cid-5aglraq5] pre code{background:0 0;border:0;padding:0}.prose[data-astro-cid-5aglraq5] table{border-collapse:collapse;width:100%;margin:0 0 1.4rem;font-size:.94rem;display:block;overflow-x:auto}.prose[data-astro-cid-5aglraq5] th,.prose[data-astro-cid-5aglraq5] td{text-align:left;border-bottom:1px solid var(--border-soft);padding:.55rem .8rem}.prose[data-astro-cid-5aglraq5] th{font-family:var(--font-mono);letter-spacing:.05em;color:var(--text-muted);font-size:.78rem;font-weight:500}.prose[data-astro-cid-5aglraq5] td{color:color-mix(in srgb, var(--text) 86%, var(--bg))}
+</style></head> <body> <a class="skip-link" href="#main">Skip to content</a>  <header class="nav" data-astro-cid-wpvy4v7s> <div class="container nav-inner" data-astro-cid-wpvy4v7s> <a class="brand" href="/" aria-label="DarkLab Security — home" data-astro-cid-wpvy4v7s> <span class="wordmark" style="font-size:0.95rem" data-astro-cid-qisgtjgl>DARKLAB<span class="cur blink" aria-hidden="true" data-astro-cid-qisgtjgl></span></span> </a> <nav aria-label="Primary" data-astro-cid-wpvy4v7s> <ul class="nav-links" data-astro-cid-wpvy4v7s> <li data-astro-cid-wpvy4v7s><a href="/#focus" data-astro-cid-wpvy4v7s>Focus</a></li> <li data-astro-cid-wpvy4v7s><a href="/notes/" data-astro-cid-wpvy4v7s>Notes</a></li> <li data-astro-cid-wpvy4v7s><a href="/#contact" class="nav-cta" data-astro-cid-wpvy4v7s>Contact</a></li> </ul> </nav> </div> </header> <main id="main" class="container note" data-astro-cid-5aglraq5> <a class="back" href="/notes/" data-astro-cid-5aglraq5>← Notes</a> <header data-astro-cid-5aglraq5> <p class="meta" data-astro-cid-5aglraq5> <time datetime="2026-08-18T00:00:00.000Z" data-astro-cid-5aglraq5>18 Aug 2026</time> <span data-astro-cid-5aglraq5>· agent security</span><span data-astro-cid-5aglraq5>· guardrails</span><span data-astro-cid-5aglraq5>· offensive agents</span>  </p> <h1 data-astro-cid-5aglraq5>A regex is not a rules of engagement</h1> <p class="summary" data-astro-cid-5aglraq5>Lessons from putting guardrails on an autonomous pentest agent, and why a pattern-matching classifier is the wrong kind of control for a tool-using model.</p> </header> <article class="prose" data-astro-cid-5aglraq5> <p>Earlier this year I built a small LLM-driven penetration-testing assistant: a model wired to
+standard offensive tooling over MCP, with a guided mode (the model proposes, a human runs) and an
+experimental <strong>autonomous mode</strong> where the agent loops toward an objective on its own.</p>
+<p>Autonomous mode needed guardrails, so I wrote the obvious thing: an action classifier that puts
+every proposed tool call into one of three buckets.</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Behaviour</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SAFE</code></td>
+<td>Runs automatically</td>
+<td>In-scope scanning, enumeration</td>
+</tr>
+<tr>
+<td><code>NEEDS_APPROVAL</code></td>
+<td>Pauses for a human</td>
+<td>Exploitation, brute force, DB writes</td>
+</tr>
+<tr>
+<td><code>FORBIDDEN</code></td>
+<td>Blocked</td>
+<td>Out-of-scope targets, local destruction</td>
+</tr>
+</tbody>
+</table>
+<p>It looks like a sensible rules-of-engagement layer. Read with an attacker’s eye, it shows how
+<em>not</em> to contain an agent.</p>
+<h2 id="what-the-classifier-actually-checks">What the classifier actually checks</h2>
+<ul>
+<li><strong>Scope is a substring match.</strong> A call is in scope if any scope entry appears anywhere in the
+command string. A command naming an in-scope host <em>and</em> an out-of-scope one passes.</li>
+<li><strong>No scope means everything is in scope.</strong> The safe default for an unconfigured run should be
+“nothing runs”, not “everything does”.</li>
+<li><strong>Danger is a deny-list.</strong> Destructive actions are recognised by regex (<code>rm -rf</code>, <code>mkfs</code>,
+<code>shutdown</code>…) and risky ones by keywords (<code>exploit</code>, <code>payload</code>, <code>reverse shell</code>). The same effect
+can be had with an interpreter one-liner, an encoded string, or a tool the list has never heard of.</li>
+<li><strong>It inspects text, not effects.</strong> The classifier sees what the model <em>says</em> it will run, not
+what the process does. DNS lookups, redirects, second-stage downloads and child processes are
+all invisible to it.</li>
+</ul>
+<p>None of these are exotic. They are the first things a red teamer tries against any allow/deny
+filter, and a capable model can stumble into them while pursuing an objective, with no malice
+involved.</p>
+<h2 id="the-underlying-mistake">The underlying mistake</h2>
+<p>A deny-list assumes the thing being filtered is cooperative and only occasionally wrong. An
+autonomous agent is better modelled as a <strong>credentialed insider with an objective</strong>: it will route
+around obstacles because routing around obstacles is what solving the task looks like.</p>
+<p>Pattern-matching on the text of a command is the wrong layer. Here is what I would build now,
+roughly in order:</p>
+<ol>
+<li><strong>Enforce scope at the network, not the prompt.</strong> Put the agent in a sandbox whose egress is
+physically limited to the authorised range. Then scope violations are impossible rather than
+merely detected.</li>
+<li><strong>Default deny.</strong> No scope configured, no execution.</li>
+<li><strong>Allow-list capabilities, not deny-list strings.</strong> Expose narrow tools (“scan host X with
+profile Y”) instead of a raw shell wherever the task allows.</li>
+<li><strong>Monitor trajectories, not single calls.</strong> Many harmful outcomes are a sequence of individually
+innocuous steps. Catching those needs a monitor that reasons over the whole run, which is
+where AI-control work comes in.</li>
+</ol>
+<h2 id="why-this-matters-beyond-one-tool">Why this matters beyond one tool</h2>
+<p>Capability evals put models inside ranges and ask them to break things. The containment around
+those ranges is the same problem at higher stakes, and models have already found gaps in it. In
+one case reported in the <a href="https://cdn.openai.com/o1-system-card.pdf">o1 system card</a>, a CTF challenge container failed to start. The
+model scanned the network, found the evaluation host’s Docker API exposed, and started a new copy
+of the challenge container with a command that printed the flag. OpenAI notes that its wider
+infrastructure stayed secure. The model still reached its goal by a route nobody intended.</p>
+<p>A follow-up note covers the monitoring side: what happens when you point a weak trusted model at a
+motivated attacker.</p>
+ </article> </main> <footer class="site-footer" data-astro-cid-jo6i4kqk> <div class="container footer-inner" data-astro-cid-jo6i4kqk> <a href="/" aria-label="DarkLab Security — home" data-astro-cid-jo6i4kqk><span class="wordmark" style="font-size:0.8rem" data-astro-cid-qisgtjgl>DARKLAB<span class="cur" aria-hidden="true" data-astro-cid-qisgtjgl></span></span></a> <p class="copy" data-astro-cid-jo6i4kqk>© 2026 DarkLab Security · <a href="/rss.xml" data-astro-cid-jo6i4kqk>RSS</a></p> </div> </footer>  </body> </html>

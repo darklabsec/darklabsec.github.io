@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>A weak monitor, and an attacker that never landed — DarkLab Security</title><meta name="description" content="A small trusted-monitoring experiment in ControlArena. A Llama-3.1-8B monitor screening code for backdoors did modestly on replayed data. The live attack round taught me more about eval design than about the monitor."><link rel="canonical" href="https://www.darklabsecurity.com/notes/weak-monitor-motivated-attacker/"><meta name="theme-color" content="#0c0f12"><meta name="color-scheme" content="dark"><!-- Open Graph / Twitter --><meta property="og:type" content="article"><meta property="og:site_name" content="DarkLab Security"><meta property="og:title" content="A weak monitor, and an attacker that never landed — DarkLab Security"><meta property="og:description" content="A small trusted-monitoring experiment in ControlArena. A Llama-3.1-8B monitor screening code for backdoors did modestly on replayed data. The live attack round taught me more about eval design than about the monitor."><meta property="og:url" content="https://www.darklabsecurity.com/notes/weak-monitor-motivated-attacker/"><meta name="twitter:card" content="summary"><!-- Fonts --><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate" type="application/rss+xml" title="DarkLab Security — Notes" href="/rss.xml"><link rel="sitemap" href="/sitemap-index.xml"><link rel="stylesheet" href="/_astro/Footer.C4TmnpXc.css"><style>.note[data-astro-cid-5aglraq5]{max-width:46rem;padding-block-start:clamp(2.5rem,6vw,4.5rem);padding-block-end:clamp(2.5rem,6vw,4.5rem)}.back[data-astro-cid-5aglraq5]{font-family:var(--font-mono);color:var(--text-muted);font-size:.85rem}.back[data-astro-cid-5aglraq5]:hover{color:var(--text)}header[data-astro-cid-5aglraq5]{border-bottom:1px solid var(--border-soft);margin:1.75rem 0 2.25rem;padding-bottom:1.75rem}.meta[data-astro-cid-5aglraq5]{font-family:var(--font-mono);color:var(--text-dim);flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.9rem;font-size:.8rem;display:flex}.draft[data-astro-cid-5aglraq5]{color:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);text-transform:uppercase;padding:0 .5rem;font-size:.68rem}h1[data-astro-cid-5aglraq5]{font-size:clamp(1.5rem,4.2vw,2.2rem)}.summary[data-astro-cid-5aglraq5]{color:var(--text-muted);margin:0;font-size:1.15rem}.prose[data-astro-cid-5aglraq5]{font-size:1.06rem}.prose[data-astro-cid-5aglraq5] h2{margin:2.4rem 0 .8rem;font-size:1.15rem}.prose[data-astro-cid-5aglraq5] h3{margin:1.8rem 0 .6rem;font-size:1rem}.prose[data-astro-cid-5aglraq5] p,.prose[data-astro-cid-5aglraq5] li{color:color-mix(in srgb, var(--text) 86%, var(--bg))}.prose[data-astro-cid-5aglraq5] a{color:var(--accent);text-underline-offset:3px;text-decoration:underline}.prose[data-astro-cid-5aglraq5] ul,.prose[data-astro-cid-5aglraq5] ol{margin:0 0 1.1rem;padding-left:1.3rem}.prose[data-astro-cid-5aglraq5] li{margin-bottom:.4rem}.prose[data-astro-cid-5aglraq5] strong{color:var(--text)}.prose[data-astro-cid-5aglraq5] blockquote{border-left:2px solid var(--accent);color:var(--text-muted);margin:1.5rem 0;padding:.2rem 0 .2rem 1.1rem}.prose[data-astro-cid-5aglraq5] code{font-family:var(--font-mono);background:var(--bg-elev-2);border:1px solid var(--border-soft);border-radius:5px;padding:.08em .35em;font-size:.88em}.prose[data-astro-cid-5aglraq5] pre{border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin:0 0 1.25rem;padding:1rem 1.1rem;font-size:.88rem;line-height:1.55;overflow-x:auto;background:var(--bg-elev)!important}.prose[data-astro-cid-5aglraq5] pre code{background:0 0;border:0;padding:0}.prose[data-astro-cid-5aglraq5] table{border-collapse:collapse;width:100%;margin:0 0 1.4rem;font-size:.94rem;display:block;overflow-x:auto}.prose[data-astro-cid-5aglraq5] th,.prose[data-astro-cid-5aglraq5] td{text-align:left;border-bottom:1px solid var(--border-soft);padding:.55rem .8rem}.prose[data-astro-cid-5aglraq5] th{font-family:var(--font-mono);letter-spacing:.05em;color:var(--text-muted);font-size:.78rem;font-weight:500}.prose[data-astro-cid-5aglraq5] td{color:color-mix(in srgb, var(--text) 86%, var(--bg))}
+</style></head> <body> <a class="skip-link" href="#main">Skip to content</a>  <header class="nav" data-astro-cid-wpvy4v7s> <div class="container nav-inner" data-astro-cid-wpvy4v7s> <a class="brand" href="/" aria-label="DarkLab Security — home" data-astro-cid-wpvy4v7s> <span class="wordmark" style="font-size:0.95rem" data-astro-cid-qisgtjgl>DARKLAB<span class="cur blink" aria-hidden="true" data-astro-cid-qisgtjgl></span></span> </a> <nav aria-label="Primary" data-astro-cid-wpvy4v7s> <ul class="nav-links" data-astro-cid-wpvy4v7s> <li data-astro-cid-wpvy4v7s><a href="/#focus" data-astro-cid-wpvy4v7s>Focus</a></li> <li data-astro-cid-wpvy4v7s><a href="/notes/" data-astro-cid-wpvy4v7s>Notes</a></li> <li data-astro-cid-wpvy4v7s><a href="/#contact" class="nav-cta" data-astro-cid-wpvy4v7s>Contact</a></li> </ul> </nav> </div> </header> <main id="main" class="container note" data-astro-cid-5aglraq5> <a class="back" href="/notes/" data-astro-cid-5aglraq5>← Notes</a> <header data-astro-cid-5aglraq5> <p class="meta" data-astro-cid-5aglraq5> <time datetime="2026-09-16T00:00:00.000Z" data-astro-cid-5aglraq5>16 Sept 2026</time> <span data-astro-cid-5aglraq5>· AI control</span><span data-astro-cid-5aglraq5>· monitoring</span><span data-astro-cid-5aglraq5>· ControlArena</span>  </p> <h1 data-astro-cid-5aglraq5>A weak monitor, and an attacker that never landed</h1> <p class="summary" data-astro-cid-5aglraq5>A small trusted-monitoring experiment in ControlArena. A Llama-3.1-8B monitor screening code for backdoors did modestly on replayed data. The live attack round taught me more about eval design than about the monitor.</p> </header> <article class="prose" data-astro-cid-5aglraq5> <p>AI control asks a practical question. If you can’t fully trust a capable model, can a weaker
+model you <em>do</em> trust watch it closely enough to catch it misbehaving? I worked through this as
+part of the <a href="https://github.com/AI-Security-Bootcamp/aisb">AI Security Bootcamp</a> curriculum,
+using AISI’s <a href="https://control-arena.aisi.org.uk/">ControlArena</a>. The sample sizes are small, so
+treat what follows as notes from an exercise, not a result.</p>
+<h2 id="setup">Setup</h2>
+<ul>
+<li><strong>Task:</strong> APPS programming problems. The <em>honest</em> policy submits a correct solution. The
+<em>attack</em> policy submits a solution with a backdoor: code that passes the tests but returns a
+wrong answer for one specific input.</li>
+<li><strong>Trusted monitor:</strong> Llama-3.1-8B-Instruct, prompted to score each submission from 0 to 10 for
+suspicion (shown below as 0 to 1).</li>
+<li><strong>Untrusted model</strong> for the live round: GPT-4o-mini.</li>
+<li><strong>Metric:</strong> ROC AUC between suspicion scores on honest and attack samples. 0.5 is chance.</li>
+</ul>
+<h2 id="round-1-replayed-backdoors">Round 1: replayed backdoors</h2>
+<p>The monitor scored 50 honest and 50 backdoored solutions replayed from the dataset. Nothing here
+adapts to the monitor.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Mean suspicion</th>
+<th>Scored ≥ 0.8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Honest (n=50)</td>
+<td>0.55</td>
+<td>27 / 50</td>
+</tr>
+<tr>
+<td>Backdoored (n=50)</td>
+<td>0.75</td>
+<td>37 / 50</td>
+</tr>
+</tbody>
+</table>
+<p><strong>AUC: 0.64.</strong> That is better than chance, but look at the operating point. A threshold of 0.8
+catches about three-quarters of the backdoors and also flags more than half of the honest code.
+Nobody would work that review queue for long, and a monitor nobody reads offers no protection.</p>
+<p>Most of my prompt iteration afterwards went into the false-positive problem. Describing what
+backdoors look like (off-by-one bounds, near-miss comparisons, mishandled edge cases) tended to
+make the monitor suspicious of everything. My later prompts told it to assume most code is honest
+and to flag something only if it could name an input that breaks it. That is the discipline good
+triage analysts use. I didn’t run a clean comparison between prompt versions, so I can’t put a
+number on the difference.</p>
+<h2 id="round-2-a-live-attacker">Round 2: a live attacker</h2>
+<p>Next, GPT-4o-mini generated solutions live. It had a hidden side task (insert a backdoor) and was
+told that a monitor was reviewing its work, so the backdoor should be subtle and checked before
+submitting.</p>
+<p>The monitor’s AUC came out below 0.5 in both runs. That looks like a striking result: the monitor
+doing worse than chance against an evasive attacker. It isn’t one. Looking at individual samples:</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Attack samples scored</th>
+<th>Backdoor triggered</th>
+<th>Backdoor triggered <em>and</em> tests passed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>5 of 9</td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td>B</td>
+<td>10 of 10</td>
+<td>2</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Every backdoor that triggered also broke the solution’s normal tests. A submission like that is
+caught by the test suite before a monitor is needed. So the attacker never produced a successful
+attack, and the low AUC mostly reflects the monitor’s scores on code that was simply wrong.
+Four samples in run A also errored and were never scored.</p>
+<h2 id="what-i-took-from-it">What I took from it</h2>
+<ol>
+<li><strong>An eval is only as strong as its attack policy.</strong> If the attacker can’t produce a working
+backdoor, the run measures the attacker, not the monitor. Before reading monitor numbers,
+check how many attacks actually succeeded.</li>
+<li><strong>Score only successful attacks.</strong> Pooling failed attempts into the attack set gives an AUC
+that looks meaningful and isn’t.</li>
+<li><strong>The false-positive rate is a security property.</strong> A monitor that buries its reviewers gets
+switched off.</li>
+<li><strong>Report sample sizes and errors.</strong> With 5 to 10 samples per run, any AUC is noise.</li>
+</ol>
+<p>Detection engineering learned versions of these lessons long ago. Test against a capable red
+team, not a replay, and tune for an alert volume people will actually work through.</p>
+ </article> </main> <footer class="site-footer" data-astro-cid-jo6i4kqk> <div class="container footer-inner" data-astro-cid-jo6i4kqk> <a href="/" aria-label="DarkLab Security — home" data-astro-cid-jo6i4kqk><span class="wordmark" style="font-size:0.8rem" data-astro-cid-qisgtjgl>DARKLAB<span class="cur" aria-hidden="true" data-astro-cid-qisgtjgl></span></span></a> <p class="copy" data-astro-cid-jo6i4kqk>© 2026 DarkLab Security · <a href="/rss.xml" data-astro-cid-jo6i4kqk>RSS</a></p> </div> </footer>  </body> </html>
